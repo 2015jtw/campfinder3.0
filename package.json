@@ -10,7 +10,7 @@
     "migrate": "drizzle-kit generate:pg -schema=./src/db/schemas/*.ts --out=./src/db/migrations/drizzle && node .src/db/migrations/migrate.js"
   },
   "dependencies": {
-    "@supabase/postgrest-js": "^1.18.0",
+    "@radix-ui/react-slot": "^1.1.1",
     "@supabase/supabase-js": "^2.48.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -18,6 +18,7 @@
     "drizzle-orm": "^0.38.4",
     "lucide-react": "^0.473.0",
     "next": "15.1.5",
+    "node-fetch": "^3.3.2",
     "pg": "^8.13.1",
     "postgres": "^3.4.5",
     "react": "^19.0.0",
@@ -28,6 +29,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@types/node": "^20",
+    "@types/node-fetch": "^2.6.12",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "drizzle-kit": "^0.30.2",
