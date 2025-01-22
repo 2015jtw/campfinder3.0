@@ -8,6 +8,7 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
+import Link from "next/link";
 
 interface CampgroundCardProps {
   title: string;
@@ -15,11 +16,13 @@ interface CampgroundCardProps {
   price: number;
   location: string;
   imageUrl: string;
+  id: string;
 }
 
 export function CampgroundCard({
   title,
   author,
+  id,
   price,
   location,
   imageUrl,
@@ -49,7 +52,9 @@ export function CampgroundCard({
         <div className="mt-2 font-semibold">${price}/night</div>
       </CardContent>
       <CardFooter>
-        <Button className="w-full">See Campground</Button>
+        <Link href={`/campgrounds/${id}`} passHref>
+          <Button className="w-full">See Campground</Button>
+        </Link>
       </CardFooter>
     </Card>
   );
