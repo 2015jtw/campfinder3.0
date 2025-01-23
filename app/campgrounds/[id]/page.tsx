@@ -45,9 +45,9 @@ const page = async ({ params }: { params: { id: string } }) => {
               <p>{data.description}</p>
               <p>{data.location}</p>
             </CardContent>
-            <CardFooter>
-              <Button>Edit</Button>
-              <Button>Delete</Button>
+            <CardFooter className="flex gap-4">
+              <Button variant={"default"}>Edit</Button>
+              <Button variant={"destructive"}>Delete</Button>
             </CardFooter>
           </Card>
         </div>
