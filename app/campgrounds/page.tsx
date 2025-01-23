@@ -14,11 +14,11 @@ export default async function Page() {
               <CampgroundCard
                 key={campground.id}
                 id={campground.id}
-                title={campground.title}
-                author={campground.author}
-                price={campground.price}
-                location={campground.location}
-                imageUrl={campground.imageUrl}
+                title={campground.title ?? "Campground Title"}
+                author={campground.author ?? "Author Name"}
+                price={campground.price ?? 50}
+                location={campground.location ?? "Location"}
+                imageUrl={campground.imageUrl ?? "/placeholder.svg"}
               />
             ))}
           {/* Add more CampgroundCard components as needed */}

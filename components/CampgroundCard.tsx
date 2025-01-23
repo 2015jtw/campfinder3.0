@@ -9,15 +9,9 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import Link from "next/link";
+import { Database } from "@/types/supabase";
 
-interface CampgroundCardProps {
-  title: string;
-  author: string;
-  price: number;
-  location: string;
-  imageUrl: string;
-  id: string;
-}
+type Campground = Database["public"]["Tables"]["campgrounds"]["Row"];
 
 export function CampgroundCard({
   title,
@@ -26,7 +20,10 @@ export function CampgroundCard({
   price,
   location,
   imageUrl,
-}: CampgroundCardProps) {
+}: Pick<
+  Campground,
+  "title" | "author" | "id" | "price" | "location" | "imageUrl"
+>) {
   return (
     <Card className="overflow-hidden">
       <div className="relative aspect-[16/9]">
