@@ -2,14 +2,13 @@ import React from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { currentUser } from "@clerk/nextjs/server";
+import { SignedIn, UserButton } from "@clerk/nextjs";
 
-const navLinks = [
-  { name: "Campgrounds", href: "/campgrounds" },
-  { name: "Login", href: "/login" },
-  { name: "Register", href: "/register" },
-];
+const Header = async ({ className }: { className?: string }) => {
+  const user = await currentUser();
 
-const Header = ({ className }: { className?: string }) => {
+  console.log("User is", user);
   return (
     <header className="p-4 border-b border-black shadow-md hidden md:flex">
       <nav className="container mx-auto flex items-center justify-between">
@@ -24,11 +23,18 @@ const Header = ({ className }: { className?: string }) => {
             >
               Home
             </Link>
-            {navLinks.map((link) => (
-              <Link key={link.name} href={link.href}>
-                {link.name}
-              </Link>
-            ))}
+            <Link href="/campgrounds">See Campgrounds</Link>
+            <Link href="/campgrounds/new">Create Campground</Link>
+            {user ? (
+              <SignedIn>
+                <UserButton />
+              </SignedIn>
+            ) : (
+              <>
+                <Link href="/sign-in">Sign In</Link>
+                <Link href="/sign-up">Sign Up</Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
