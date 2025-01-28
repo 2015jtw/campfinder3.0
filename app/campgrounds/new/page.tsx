@@ -28,7 +28,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/lib/supabaseClient";
 
 const formSchema = z.object({
-  username: z.string().min(2).max(50),
+  title: z.string().min(2).max(50),
+  author: z.string().min(2).max(50),
   price: z
     .string()
     .min(1, { message: "Price is required" })
@@ -45,7 +46,9 @@ const Page = () => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: "",
+      title: "",
+      description: "",
+      author: "",
       price: 0,
       location: "",
       picture: "",
@@ -53,6 +56,8 @@ const Page = () => {
   });
 
   const { userId } = useAuth();
+
+  console.log("User ID:", userId);
 
   // 2. Define a submit handler.
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -64,12 +69,13 @@ const Page = () => {
     try {
       const { error } = await supabase.from("campgrounds").insert([
         {
-          title: values.username,
+          title: values.title,
           price: values.price,
           location: values.location,
           imageUrl: values.picture,
           description: values.description,
           author: userId,
+          id: userId,
           created_at: new Date().toISOString(),
         },
       ]);
@@ -89,15 +95,28 @@ const Page = () => {
 
   return (
     <section className="container mx-auto p-4">
-      <h1>Create New Campground</h1>
+      <h1 className="text-center">Create New Campground</h1>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <FormField
             control={form.control}
-            name="username"
+            name="title"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Full Name</FormLabel>
+                <FormLabel>Campground Title</FormLabel>
+                <FormControl>
+                  <Input placeholder="Canyon Creek Campsite" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="author"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Campground Author</FormLabel>
                 <FormControl>
                   <Input placeholder="John Doe" {...field} />
                 </FormControl>
@@ -105,6 +124,7 @@ const Page = () => {
               </FormItem>
             )}
           />
+
           <FormField
             control={form.control}
             name="price"
