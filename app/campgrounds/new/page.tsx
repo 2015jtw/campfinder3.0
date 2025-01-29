@@ -1,7 +1,7 @@
 "use client";
 
 // React/Next
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 // Clerk
 import { useAuth } from "@clerk/nextjs";
@@ -25,7 +25,7 @@ import { useForm } from "react-hook-form";
 import { Textarea } from "@/components/ui/textarea";
 
 // supabase
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase/supabaseClient";
 
 const formSchema = z.object({
   title: z.string().min(2).max(50),
@@ -38,11 +38,23 @@ const formSchema = z.object({
     })
     .transform((val) => parseFloat(val)),
   location: z.string().min(2).max(50),
-  picture: z.string().url(),
+  picture: z
+    .custom<FileList>()
+    .optional()
+    .refine(
+      (files) => !files || files.length === 0 || files[0].size <= 5000000,
+      {
+        message: "Max file size is 5MB.",
+      }
+    ),
+
   description: z.string().min(2).max(500),
 });
 
 const Page = () => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [supabaseUserId, setSupabaseUserId] = useState<string | null>(null);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -51,19 +63,70 @@ const Page = () => {
       author: "",
       price: 0,
       location: "",
-      picture: "",
+      picture: undefined,
     },
   });
 
   const { userId } = useAuth();
 
-  console.log("User ID:", userId);
+  // Fetch Supabase user ID when component mounts or clerk userId changes
+  useEffect(() => {
+    async function getSupabaseUserId() {
+      if (!userId) return;
 
-  // 2. Define a submit handler.
+      try {
+        const { data, error } = await supabase
+          .from("users")
+          .select("id")
+          .eq("clerk_id", userId)
+          .single();
+
+        if (error) {
+          console.error("Error fetching Supabase user:", error);
+          return;
+        }
+
+        if (data) {
+          setSupabaseUserId(data.id);
+        }
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    }
+
+    getSupabaseUserId();
+  }, [userId]);
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!userId) {
+    if (!userId || !supabaseUserId) {
       console.log("You must be logged in to create a campground.");
       return;
+    }
+
+    setIsSubmitting(true);
+
+    let imageUrl = null;
+
+    if (values.picture && values.picture.length > 0) {
+      const file = values.picture[0];
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${userId}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from("campground-images")
+        .upload(filePath, file, { upsert: true });
+
+      if (error) {
+        console.error("Error uploading image:", error.message);
+        alert("Image upload failed.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      imageUrl = supabase.storage
+        .from("campground-images")
+        .getPublicUrl(filePath).data.publicUrl;
     }
 
     try {
@@ -72,13 +135,14 @@ const Page = () => {
           title: values.title,
           price: values.price,
           location: values.location,
-          imageUrl: values.picture,
+          imageUrl,
           description: values.description,
-          author: userId,
-          id: userId,
+          author: values.author,
           created_at: new Date().toISOString(),
+          user_id: supabaseUserId, // Use the Supabase user ID here
         },
       ]);
+
       if (error) {
         console.error("Error inserting data:", error);
         alert("Failed to create the campground. Please try again.");
@@ -159,7 +223,13 @@ const Page = () => {
               <FormItem>
                 <FormLabel>Picture</FormLabel>
                 <FormControl>
-                  <Input type="file" {...field} />
+                  <Input
+                    type="file"
+                    onChange={(e) => field.onChange(e.target.files)}
+                    onBlur={field.onBlur}
+                    name={field.name}
+                    ref={field.ref}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -178,7 +248,9 @@ const Page = () => {
               </FormItem>
             )}
           />
-          <Button type="submit">Submit</Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Submitting..." : "Submit"}
+          </Button>
         </form>
       </Form>
     </section>

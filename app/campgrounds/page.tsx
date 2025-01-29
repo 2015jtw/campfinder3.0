@@ -1,5 +1,5 @@
 import { CampgroundCard } from "@/components/CampgroundCard";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase/supabaseClient";
 
 export default async function Page() {
   const { data, error } = await supabase.from("campgrounds").select("*");
