@@ -1,12 +1,7 @@
 "use client";
 
-// React/Next
-import React, { useState, useEffect } from "react";
-
-// Clerk
+import React, { useState } from "react";
 import { useAuth } from "@clerk/nextjs";
-
-// UI
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -17,26 +12,23 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-
-// Form Validation
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Textarea } from "@/components/ui/textarea";
-
-// supabase
 import { supabase } from "@/lib/supabase/supabaseClient";
+import { useRouter } from "next/navigation";
+import type { Database } from "@/types/supabase";
+
+type Campground = Database["public"]["Tables"]["campgrounds"]["Insert"];
 
 const formSchema = z.object({
   title: z.string().min(2).max(50),
   author: z.string().min(2).max(50),
   price: z
     .string()
-    .min(1, { message: "Price is required" })
-    .refine((val) => !isNaN(parseFloat(val)), {
-      message: "Price must be a valid number",
-    })
-    .transform((val) => parseFloat(val)),
+    .min(1)
+    .transform((val) => parseFloat(val)), // Change to string
   location: z.string().min(2).max(50),
   picture: z
     .custom<FileList>()
@@ -46,122 +38,142 @@ const formSchema = z.object({
       {
         message: "Max file size is 5MB.",
       }
+    )
+    .refine(
+      (files) =>
+        !files ||
+        files.length === 0 ||
+        ["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(
+          files[0]?.type
+        ),
+      {
+        message: "Only .jpg, .jpeg, .png, and .webp formats are supported.",
+      }
     ),
-
   description: z.string().min(2).max(500),
 });
 
 const Page = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [supabaseUserId, setSupabaseUserId] = useState<string | null>(null);
+  const router = useRouter();
+  const { userId } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
-      description: "",
       author: "",
+      description: "",
       price: 0,
       location: "",
       picture: undefined,
     },
   });
 
-  const { userId } = useAuth();
+  const handleImageUpload = async (file: File): Promise<string | null> => {
+    try {
+      // Create a unique file name
+      const fileExt = file.name.split(".").pop()?.toLowerCase();
+      const fileName = `${userId}-${Date.now()}.${fileExt}`;
+      const filePath = `public/${fileName}`;
 
-  // Fetch Supabase user ID when component mounts or clerk userId changes
-  useEffect(() => {
-    async function getSupabaseUserId() {
-      if (!userId) return;
+      // Upload the file to Supabase storage
+      const { error } = await supabase.storage
+        .from("campground-images")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
 
-      try {
-        const { data, error } = await supabase
-          .from("users")
-          .select("id")
-          .eq("clerk_id", userId)
-          .single();
-
-        if (error) {
-          console.error("Error fetching Supabase user:", error);
-          return;
-        }
-
-        if (data) {
-          setSupabaseUserId(data.id);
-        }
-      } catch (error) {
-        console.error("Error:", error);
+      if (error) {
+        throw error;
       }
-    }
 
-    getSupabaseUserId();
-  }, [userId]);
+      // Get the public URL
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("campground-images").getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      return null;
+    }
+  };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!userId || !supabaseUserId) {
-      console.log("You must be logged in to create a campground.");
+    if (!userId) {
+      console.error("You must be logged in to create a campground.");
+      router.push("/sign-in");
       return;
     }
 
     setIsSubmitting(true);
 
-    let imageUrl = null;
+    try {
+      // Find the user in Supabase using clerk_id
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("id")
+        .eq("clerk_id", userId)
+        .single();
 
-    if (values.picture && values.picture.length > 0) {
-      const file = values.picture[0];
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${userId}-${Date.now()}.${fileExt}`;
-      const filePath = `${fileName}`;
-
-      const { data, error } = await supabase.storage
-        .from("campground-images")
-        .upload(filePath, file, { upsert: true });
-
-      if (error) {
-        console.error("Error uploading image:", error.message);
-        alert("Image upload failed.");
+      if (userError || !userData) {
+        console.error("Error finding user:", userError);
         setIsSubmitting(false);
         return;
       }
 
-      imageUrl = supabase.storage
-        .from("campground-images")
-        .getPublicUrl(filePath).data.publicUrl;
-    }
+      // Handle image upload if provided
+      let imageUrl = null;
+      if (values.picture && values.picture.length > 0) {
+        const file = values.picture[0];
+        imageUrl = await handleImageUpload(file);
 
-    try {
-      const { error } = await supabase.from("campgrounds").insert([
-        {
-          title: values.title,
-          price: values.price,
-          location: values.location,
-          imageUrl,
-          description: values.description,
-          author: values.author,
-          created_at: new Date().toISOString(),
-          user_id: supabaseUserId, // Use the Supabase user ID here
-        },
-      ]);
-
-      if (error) {
-        console.error("Error inserting data:", error);
-        alert("Failed to create the campground. Please try again.");
-        return;
+        if (!imageUrl) {
+          throw new Error("Failed to upload image");
+        }
       }
 
-      alert("Campground created successfully!");
-      form.reset(); // Reset the form
+      const newCampground: Campground = {
+        title: values.title,
+        author: values.author,
+        price: values.price,
+        location: values.location,
+        imageUrl: imageUrl,
+        description: values.description,
+        user_id: userData.id, // Using the correct field name from your schema
+        created_at: new Date().toISOString(),
+      };
+
+      const { error: insertError } = await supabase
+        .from("campgrounds")
+        .insert([newCampground]);
+
+      if (insertError) {
+        throw new Error(insertError.message);
+      }
+
+      form.reset();
+      router.push("/campgrounds");
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error creating campground:", error);
+      alert("Failed to create campground. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-    console.log(values);
   }
 
   return (
     <section className="container mx-auto p-4">
-      <h1 className="text-center">Create New Campground</h1>
+      <h1 className="text-2xl font-bold mb-6 text-center">
+        Create New Campground
+      </h1>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-8 max-w-xl mx-auto"
+        >
           <FormField
             control={form.control}
             name="title"
@@ -175,6 +187,7 @@ const Page = () => {
               </FormItem>
             )}
           />
+
           <FormField
             control={form.control}
             name="author"
@@ -194,14 +207,20 @@ const Page = () => {
             name="price"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Price</FormLabel>
+                <FormLabel>Price per night</FormLabel>
                 <FormControl>
-                  <Input placeholder="15" {...field} />
+                  <Input
+                    placeholder="15"
+                    type="number"
+                    step="0.01"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
           <FormField
             control={form.control}
             name="location"
@@ -211,11 +230,11 @@ const Page = () => {
                 <FormControl>
                   <Input placeholder="Moab, Utah" {...field} />
                 </FormControl>
-
                 <FormMessage />
               </FormItem>
             )}
           />
+
           <FormField
             control={form.control}
             name="picture"
@@ -225,7 +244,13 @@ const Page = () => {
                 <FormControl>
                   <Input
                     type="file"
-                    onChange={(e) => field.onChange(e.target.files)}
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    onChange={(e) => {
+                      field.onChange(e.target.files);
+                      if (e.target.files?.[0]) {
+                        // Preview logic could be added here
+                      }
+                    }}
                     onBlur={field.onBlur}
                     name={field.name}
                     ref={field.ref}
@@ -235,6 +260,7 @@ const Page = () => {
               </FormItem>
             )}
           />
+
           <FormField
             control={form.control}
             name="description"
@@ -242,14 +268,19 @@ const Page = () => {
               <FormItem>
                 <FormLabel>Description</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Type your message here." {...field} />
+                  <Textarea
+                    placeholder="Describe your campground..."
+                    className="min-h-[100px]"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Submitting..." : "Submit"}
+
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "Creating..." : "Create Campground"}
           </Button>
         </form>
       </Form>
