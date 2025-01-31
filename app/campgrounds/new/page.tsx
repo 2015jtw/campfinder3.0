@@ -1,7 +1,10 @@
 "use client";
 
+// React/Next
 import React, { useState } from "react";
-import { useAuth } from "@clerk/nextjs";
+// import { useRouter } from "next/navigation";
+
+// UI
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -12,15 +15,18 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+
+// Form Validations
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "@/lib/supabase/supabaseClient";
-import { useRouter } from "next/navigation";
-import type { Database } from "@/types/supabase";
 
-type Campground = Database["public"]["Tables"]["campgrounds"]["Insert"];
+// supabase
+// import { supabase } from "@/lib/supabase/supabaseClient";
+// import type { Database } from "@/types/supabase";
+
+// type Campground = Database["public"]["Tables"]["campgrounds"]["Insert"];
 
 const formSchema = z.object({
   title: z.string().min(2).max(50),
@@ -55,8 +61,7 @@ const formSchema = z.object({
 
 const Page = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const router = useRouter();
-  const { userId } = useAuth();
+  // const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -70,98 +75,10 @@ const Page = () => {
     },
   });
 
-  const handleImageUpload = async (file: File): Promise<string | null> => {
-    try {
-      // Create a unique file name
-      const fileExt = file.name.split(".").pop()?.toLowerCase();
-      const fileName = `${userId}-${Date.now()}.${fileExt}`;
-      const filePath = `public/${fileName}`;
-
-      // Upload the file to Supabase storage
-      const { error } = await supabase.storage
-        .from("campground-images")
-        .upload(filePath, file, {
-          cacheControl: "3600",
-          upsert: false,
-        });
-
-      if (error) {
-        throw error;
-      }
-
-      // Get the public URL
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("campground-images").getPublicUrl(filePath);
-
-      return publicUrl;
-    } catch (error) {
-      console.error("Error uploading image:", error);
-      return null;
-    }
-  };
-
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!userId) {
-      console.error("You must be logged in to create a campground.");
-      router.push("/sign-in");
-      return;
-    }
-
     setIsSubmitting(true);
 
-    try {
-      // Find the user in Supabase using clerk_id
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("id")
-        .eq("clerk_id", userId)
-        .single();
-
-      if (userError || !userData) {
-        console.error("Error finding user:", userError);
-        setIsSubmitting(false);
-        return;
-      }
-
-      // Handle image upload if provided
-      let imageUrl = null;
-      if (values.picture && values.picture.length > 0) {
-        const file = values.picture[0];
-        imageUrl = await handleImageUpload(file);
-
-        if (!imageUrl) {
-          throw new Error("Failed to upload image");
-        }
-      }
-
-      const newCampground: Campground = {
-        title: values.title,
-        author: values.author,
-        price: values.price,
-        location: values.location,
-        imageUrl: imageUrl,
-        description: values.description,
-        user_id: userData.id, // Using the correct field name from your schema
-        created_at: new Date().toISOString(),
-      };
-
-      const { error: insertError } = await supabase
-        .from("campgrounds")
-        .insert([newCampground]);
-
-      if (insertError) {
-        throw new Error(insertError.message);
-      }
-
-      form.reset();
-      router.push("/campgrounds");
-    } catch (error) {
-      console.error("Error creating campground:", error);
-      alert("Failed to create campground. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    console.log("values", values);
   }
 
   return (

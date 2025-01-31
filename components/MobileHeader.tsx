@@ -1,7 +1,7 @@
 "use client";
 
 // React/Next
-import React, { useEffect } from "react";
+import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -17,78 +17,23 @@ import {
 import { DialogTitle } from "@radix-ui/react-dialog";
 
 // supabase + clerk
-import { useUser, SignedIn, UserButton } from "@clerk/nextjs";
-import { supabase } from "@/lib/supabase/supabaseClient";
+// import { supabase } from "@/lib/supabase/supabaseClient";
 
-const getLinks = (isSignedIn: boolean) => {
-  const baseLinks = [
-    { name: "Home", href: "/" },
-    { name: "Campgrounds", href: "/campgrounds" },
-  ];
-
-  const authLinks = isSignedIn
-    ? [] // When signed in, we'll show the UserButton instead
-    : [
-        { name: "Sign In", href: "/sign-in" },
-        { name: "Sign Up", href: "/sign-up" },
-      ];
-
-  return [...baseLinks, ...authLinks];
-};
+const baseLinks = [
+  { name: "Home", href: "/" },
+  { name: "Campgrounds", href: "/campgrounds" },
+  { name: "New Campground", href: "/campgrounds/new" },
+  { name: "Sign In", href: "/sign-in" },
+  { name: "Sign Up", href: "/sign-up" },
+];
 
 const MobileHeader = () => {
   const pathname = usePathname();
-  const { user, isSignedIn } = useUser();
-
-  useEffect(() => {
-    const syncUserWithSupabase = async () => {
-      if (!user) return;
-
-      try {
-        // Check if user exists in Supabase
-        const { data: existingUser } = await supabase
-          .from("users")
-          .select("id")
-          .eq("clerk_id", user.id)
-          .single();
-
-        if (!existingUser) {
-          // Create new user in Supabase
-          const { error } = await supabase.from("users").insert({
-            clerk_id: user.id,
-            email: user.primaryEmailAddress?.emailAddress,
-            first_name: user.firstName,
-            last_name: user.lastName,
-            profile_image_url: user.imageUrl,
-            created_at: new Date().toISOString(),
-          });
-
-          if (error) {
-            console.error("Error creating user in Supabase:", error);
-          }
-        }
-      } catch (error) {
-        console.error("Error syncing user with Supabase:", error);
-      }
-    };
-
-    syncUserWithSupabase();
-  }, [user]);
-
-  const sidebarLinks = getLinks(!!isSignedIn);
 
   return (
     <header className="flex h-16 md:hidden">
       <nav className="flex items-center justify-between container mx-auto px-5">
         <Image src="/icons/logo.svg" width={30} height={30} alt="menu item" />
-
-        {isSignedIn && (
-          <div className="pl-4 pt-4">
-            <SignedIn>
-              <UserButton />
-            </SignedIn>
-          </div>
-        )}
 
         <Sheet>
           <SheetTrigger>
@@ -111,7 +56,7 @@ const MobileHeader = () => {
                 CampFinder 3.0
               </h1>
             </Link>
-            {sidebarLinks.map((link) => (
+            {baseLinks.map((link) => (
               <SheetClose asChild key={link.name}>
                 <Link
                   href={link.href}
