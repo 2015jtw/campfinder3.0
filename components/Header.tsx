@@ -5,9 +5,7 @@ import Image from "next/image";
 
 // UI + utils
 import { cn } from "@/lib/utils";
-
-// supabase
-import { createClient } from "@/lib/supabase/supabaseClient";
+import LoginButton from "./LoginLogoutButton";
 
 const Header = async ({ className }: { className?: string }) => {
   return (
@@ -26,8 +24,7 @@ const Header = async ({ className }: { className?: string }) => {
             </Link>
             <Link href="/campgrounds">See Campgrounds</Link>
             <Link href="/campgrounds/new">Create Campground</Link>
-            <Link href="/sign-in">Sign In</Link>
-            <Link href="/sign-up">Sign Up</Link>
+            <LoginButton />
           </div>
         </div>
       </nav>

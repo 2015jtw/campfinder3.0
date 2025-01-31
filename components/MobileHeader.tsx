@@ -23,8 +23,7 @@ const baseLinks = [
   { name: "Home", href: "/" },
   { name: "Campgrounds", href: "/campgrounds" },
   { name: "New Campground", href: "/campgrounds/new" },
-  { name: "Sign In", href: "/sign-in" },
-  { name: "Sign Up", href: "/sign-up" },
+  { name: "Login", href: "/login" },
 ];
 
 const MobileHeader = () => {

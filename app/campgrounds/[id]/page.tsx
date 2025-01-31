@@ -5,7 +5,7 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import { supabase } from "@/lib/supabase/supabaseClient";
+import { supabase } from "@/lib/supabase/client";
 import React from "react";
 import Image from "next/image";
 

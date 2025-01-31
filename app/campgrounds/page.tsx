@@ -1,5 +1,5 @@
 import { CampgroundCard } from "@/components/CampgroundCard";
-import { createClient } from "@/lib/supabase/supabaseClient";
+import { createClient } from "@/lib/supabase/client";
 
 export default async function Page() {
   const supabase = createClient();
