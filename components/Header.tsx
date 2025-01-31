@@ -1,5 +1,3 @@
-"use client";
-
 // React/Next
 import React from "react";
 import Link from "next/link";
@@ -9,8 +7,9 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 // supabase
+import { createClient } from "@/lib/supabase/supabaseClient";
 
-const Header = ({ className }: { className?: string }) => {
+const Header = async ({ className }: { className?: string }) => {
   return (
     <header className="p-4 border-b border-black shadow-md hidden md:flex">
       <nav className="container mx-auto flex items-center justify-between">
