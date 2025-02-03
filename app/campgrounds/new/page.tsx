@@ -2,7 +2,7 @@
 
 // React/Next
 import React, { useState } from "react";
-// import { useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 // UI
 import { Button } from "@/components/ui/button";
@@ -22,11 +22,8 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
-// supabase
-// import { supabase } from "@/lib/supabase/supabaseClient";
-// import type { Database } from "@/types/supabase";
-
-// type Campground = Database["public"]["Tables"]["campgrounds"]["Insert"];
+// server action
+import { createCampground } from "@/app/actions/createCampground";
 
 const formSchema = z.object({
   title: z.string().min(2).max(50),
@@ -61,7 +58,7 @@ const formSchema = z.object({
 
 const Page = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // const router = useRouter();
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -78,7 +75,16 @@ const Page = () => {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
 
-    console.log("values", values);
+    const result = await createCampground(values);
+
+    if (result?.error) {
+      alert(`Error: ${result.error}`);
+    } else {
+      alert("Campground created successfully!");
+      router.push("/campgrounds");
+    }
+
+    setIsSubmitting(false);
   }
 
   return (

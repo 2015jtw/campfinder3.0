@@ -1,8 +1,8 @@
 import { CampgroundCard } from "@/components/CampgroundCard";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function Page() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase.from("campgrounds").select("*");
   console.log("campgrounds", data);
   if (error) console.error("Error fetching campgrounds", error);
