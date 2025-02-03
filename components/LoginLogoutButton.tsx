@@ -4,8 +4,9 @@ import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { signout } from "@/lib/auth-actions";
+import { cn } from "@/lib/utils";
 
-const LoginButton = () => {
+const LoginButton = ({ className }: { className?: string }) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [user, setUser] = useState<any>(null);
   const router = useRouter();
@@ -26,6 +27,7 @@ const LoginButton = () => {
           signout();
           setUser(null);
         }}
+        className={cn(className)}
       >
         Log out
       </Button>

@@ -15,15 +15,12 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { DialogTitle } from "@radix-ui/react-dialog";
-
-// supabase + clerk
-// import { supabase } from "@/lib/supabase/supabaseClient";
+import LoginButton from "./LoginLogoutButton";
 
 const baseLinks = [
   { name: "Home", href: "/" },
   { name: "Campgrounds", href: "/campgrounds" },
   { name: "New Campground", href: "/campgrounds/new" },
-  { name: "Login", href: "/login" },
 ];
 
 const MobileHeader = () => {
@@ -70,6 +67,9 @@ const MobileHeader = () => {
                 </Link>
               </SheetClose>
             ))}
+            <SheetClose asChild>
+              <LoginButton className="my-4 ml-4" />
+            </SheetClose>
           </SheetContent>
         </Sheet>
       </nav>

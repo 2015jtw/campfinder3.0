@@ -5,11 +5,12 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import { supabase } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/server";
 import React from "react";
 import Image from "next/image";
 
 const page = async ({ params }: { params: { id: string } }) => {
+  const supabase = await createClient();
   const { id } = await params;
 
   const { data, error } = await supabase
@@ -22,8 +23,6 @@ const page = async ({ params }: { params: { id: string } }) => {
     console.error(error);
     return <div>Error loading campground</div>;
   }
-
-  console.log("data: ", data);
 
   return (
     <section className="w-full h-screen py-20 bg-gray-100">

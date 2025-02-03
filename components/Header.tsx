@@ -1,13 +1,18 @@
+"use client";
+
 // React/Next
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 
 // UI + utils
 import { cn } from "@/lib/utils";
 import LoginButton from "./LoginLogoutButton";
 
-const Header = async ({ className }: { className?: string }) => {
+const Header = () => {
+  const pathname = usePathname();
+
   return (
     <header className="p-4 border-b border-black shadow-md hidden md:flex">
       <nav className="container mx-auto flex items-center justify-between">
@@ -18,14 +23,32 @@ const Header = async ({ className }: { className?: string }) => {
           <div className="gap-4 flex items-center">
             <Link
               href="/"
-              className={cn("text-18 font-bold text-white-1", className)}
+              className={cn("text-lg font-medium", {
+                "text-blue-600": pathname === "/",
+              })}
             >
               Home
             </Link>
-            <Link href="/campgrounds">See Campgrounds</Link>
-            <Link href="/campgrounds/new">Create Campground</Link>
-            <LoginButton />
+            <Link
+              className={cn("text-lg font-medium", {
+                "text-blue-600": pathname === "/campgrounds",
+              })}
+              href="/campgrounds"
+            >
+              Campgrounds
+            </Link>
+            <Link
+              className={cn("text-lg font-medium", {
+                "text-blue-600": pathname === "/campgrounds/new",
+              })}
+              href="/campgrounds/new"
+            >
+              New Campground
+            </Link>
           </div>
+        </div>
+        <div>
+          <LoginButton />
         </div>
       </nav>
     </header>
