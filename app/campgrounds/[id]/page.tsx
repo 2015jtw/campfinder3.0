@@ -1,3 +1,8 @@
+// React/NextJS
+import React from "react";
+import Image from "next/image";
+
+// UI
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -5,9 +10,10 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
+
+// server actions + supabase
 import { createClient } from "@/lib/supabase/server";
-import React from "react";
-import Image from "next/image";
+// import { deleteCampground } from "@/app/actions/deleteCampground";
 
 const page = async ({ params }: { params: { id: string } }) => {
   const supabase = await createClient();
