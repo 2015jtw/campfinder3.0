@@ -7,7 +7,7 @@ const LogoutPage = () => {
   const router = useRouter();
 
   useEffect(() => {
-    setTimeout(() => router.push("/"), 1000);
+    setTimeout(() => router.push("/"), 500);
   }, []);
   return <div>You have logged out... redirecting in a second.</div>;
 };

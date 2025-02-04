@@ -1,5 +1,7 @@
+// React/Next
 import Link from "next/link";
 
+// UI
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,8 +12,10 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { login } from "@/lib/auth-actions";
 import SignInWithGoogleButton from "./SignInWithGoogleButton";
+
+// Actions
+import { login } from "@/lib/auth-actions";
 
 export function LoginForm() {
   return (

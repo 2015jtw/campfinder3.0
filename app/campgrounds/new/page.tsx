@@ -3,6 +3,7 @@
 // React/Next
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 
 // UI
 import { Button } from "@/components/ui/button";
@@ -59,6 +60,7 @@ const formSchema = z.object({
 const Page = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -78,9 +80,16 @@ const Page = () => {
     const result = await createCampground(values);
 
     if (result?.error) {
-      alert(`Error: ${result.error}`);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: result.error,
+      });
     } else {
-      alert("Campground created successfully!");
+      toast({
+        title: "Success",
+        description: "Campground created successfully!",
+      });
       router.push("/campgrounds");
     }
 

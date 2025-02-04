@@ -14,6 +14,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import EditCampgroundForm from "@/components/EditCampgroundForm";
+import { useToast } from "@/hooks/use-toast";
 
 // server actions + supabase
 import { createClient } from "@/lib/supabase/client";
@@ -27,6 +28,7 @@ import type { FormValues } from "@/components/EditCampgroundForm";
 type Campground = Database["public"]["Tables"]["campgrounds"]["Row"];
 
 const Page = () => {
+  const { toast } = useToast();
   const [campground, setCampground] = useState<Campground>({
     author: null,
     created_at: "",
@@ -58,7 +60,11 @@ const Page = () => {
         .single();
 
       if (error) {
-        console.error("Error fetching campground:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Error fetching campground.",
+        });
       } else {
         setCampground(data);
       }
@@ -72,9 +78,16 @@ const Page = () => {
     const result = await deleteCampground(id);
 
     if (result?.error) {
-      alert(`Error: ${result.error}`);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: result.error,
+      });
     } else {
-      alert("Campground deleted successfully");
+      toast({
+        title: "Success",
+        description: "Campground deleted successfully!",
+      });
       router.push("/campgrounds");
     }
   }
@@ -84,10 +97,16 @@ const Page = () => {
     const result = await updateCampground(id, values);
 
     if (result?.error) {
-      console.error("Error updating campground:", result.error);
-      alert(`Error: ${result.error}`);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: result.error,
+      });
     } else {
-      alert("Campground updated successfully");
+      toast({
+        title: "Success",
+        description: "Campground updated successfully!",
+      });
       setIsEditing(false); // Exit edit mode
       setCampground({ ...campground, ...values }); // Update UI
     }
