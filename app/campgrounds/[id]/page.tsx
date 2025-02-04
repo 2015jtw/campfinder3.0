@@ -1,6 +1,9 @@
+"use client";
+
 // React/NextJS
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
+import { useRouter, useParams } from "next/navigation";
 
 // UI
 import { Button } from "@/components/ui/button";
@@ -10,52 +13,130 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
+import EditCampgroundForm from "@/components/EditCampgroundForm";
 
 // server actions + supabase
-import { createClient } from "@/lib/supabase/server";
-// import { deleteCampground } from "@/app/actions/deleteCampground";
+import { createClient } from "@/lib/supabase/client";
+import { deleteCampground } from "@/app/actions/deleteCampground";
+import { updateCampground } from "@/app/actions/updateCampground";
+import { Database } from "@/types/supabase";
 
-const page = async ({ params }: { params: { id: string } }) => {
-  const supabase = await createClient();
-  const { id } = await params;
+// Form validation
+import type { FormValues } from "@/components/EditCampgroundForm";
 
-  const { data, error } = await supabase
-    .from("campgrounds")
-    .select("*")
-    .eq("id", id)
-    .single();
+type Campground = Database["public"]["Tables"]["campgrounds"]["Row"];
 
-  if (error) {
-    console.error(error);
-    return <div>Error loading campground</div>;
+const Page = () => {
+  const [campground, setCampground] = useState<Campground>({
+    author: null,
+    created_at: "",
+    description: null,
+    id: "",
+    imageUrl: null,
+    location: null,
+    price: null,
+    title: null,
+    user_id: null,
+  });
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+
+  const supabase = createClient();
+  const router = useRouter();
+  const params = useParams();
+  const id = params?.id as string;
+  console.log("Id:", id);
+
+  useEffect(() => {
+    async function fetchCampgrounds() {
+      const { data, error } = await supabase
+        .from("campgrounds")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) {
+        console.error("Error fetching campground:", error);
+      } else {
+        setCampground(data);
+      }
+      setIsLoading(false);
+    }
+    fetchCampgrounds();
+  }, [id]);
+
+  async function handleDelete() {
+    setIsDeleting(true);
+    const result = await deleteCampground(id);
+
+    if (result?.error) {
+      alert(`Error: ${result.error}`);
+    } else {
+      alert("Campground deleted successfully");
+      router.push("/campgrounds");
+    }
   }
+
+  async function handleUpdate(values: FormValues) {
+    console.log("Submitting update for:", values);
+    const result = await updateCampground(id, values);
+
+    if (result?.error) {
+      console.error("Error updating campground:", result.error);
+      alert(`Error: ${result.error}`);
+    } else {
+      alert("Campground updated successfully");
+      setIsEditing(false); // Exit edit mode
+      setCampground({ ...campground, ...values }); // Update UI
+    }
+  }
+
+  if (isLoading) return <p>Loading...</p>;
+  if (!campground) return <p>Campground not found.</p>;
 
   return (
     <section className="w-full h-screen py-20 bg-gray-100">
       <div className="container px-4 mx-auto bg-white flex justify-between py-10">
-        <div className="h-full w-1/2 flex flex-col">
-          <Card className="shadow-lg">
-            <CardHeader>
-              <Image
-                src={data.imageUrl ?? "/placeholder.svg"}
-                alt={data.title ?? "Campground Image"}
-                width={400}
-                height={300}
-              />
-            </CardHeader>
-            <CardContent>
-              <p>{data.title}</p>
-              <p>{data.author}</p>
-              <p>Campground ID: {id}</p>
-              <p>{data.description}</p>
-              <p>{data.location}</p>
-            </CardContent>
-            <CardFooter className="flex gap-4">
-              <Button variant={"default"}>Edit</Button>
-              <Button variant={"destructive"}>Delete</Button>
-            </CardFooter>
-          </Card>
-        </div>
+        {isEditing ? (
+          <EditCampgroundForm
+            campground={campground}
+            onSubmit={handleUpdate}
+            onCancel={() => setIsEditing(false)}
+          />
+        ) : (
+          <div className="h-full w-1/2 flex flex-col">
+            <Card className="shadow-lg">
+              <CardHeader>
+                <Image
+                  src={campground.imageUrl ?? "/placeholder.svg"}
+                  alt={campground.title ?? "Campground Image"}
+                  width={400}
+                  height={300}
+                />
+              </CardHeader>
+              <CardContent>
+                <p>{campground.title}</p>
+                <p>{campground.author}</p>
+                <p>{campground.description}</p>
+                <p>{campground.location}</p>
+              </CardContent>
+              <CardFooter className="flex gap-4">
+                <Button variant="edit" onClick={() => setIsEditing(true)}>
+                  Edit
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? "Deleting..." : "Delete"}
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+        )}
         <div className="flex flex-col justify-center w-1/2">
           <div className="h-1/2 justify-center items-center flex border border-green-700 w-full">
             Map
@@ -69,4 +150,4 @@ const page = async ({ params }: { params: { id: string } }) => {
   );
 };
 
-export default page;
+export default Page;

@@ -18,7 +18,7 @@ export async function deleteCampground(id: string) {
   // ✅ Get the campground to check ownership
   const { data: campground, error: fetchError } = await supabase
     .from("campgrounds")
-    .select("user_id")
+    .select("id, imageUrl, user_id")
     .eq("id", id)
     .single();
 
@@ -29,6 +29,14 @@ export async function deleteCampground(id: string) {
   // ✅ Verify ownership
   if (campground.user_id !== user.id) {
     return { error: "You do not have permission to delete this campground" };
+  }
+
+  // ✅ Delete the associated image from Supabase Storage
+  if (campground.imageUrl) {
+    const filePath = campground.imageUrl.split("/").pop(); // Extract file name
+    await supabase.storage
+      .from("campground-images")
+      .remove([`campgrounds/${filePath}`]);
   }
 
   // ✅ Delete the campground
