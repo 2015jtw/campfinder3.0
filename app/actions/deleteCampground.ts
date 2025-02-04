@@ -32,11 +32,19 @@ export async function deleteCampground(id: string) {
   }
 
   // ✅ Delete the associated image from Supabase Storage
-  if (campground.imageUrl) {
-    const filePath = campground.imageUrl.split("/").pop(); // Extract file name
-    await supabase.storage
+  if (campground.imageUrl && Array.isArray(campground.imageUrl)) {
+    const filePaths = campground.imageUrl.map((url: string) => {
+      const segments = url.split("/");
+      return `campgrounds/${segments[segments.length - 1]}`;
+    });
+    const { error: storageError } = await supabase.storage
       .from("campground-images")
-      .remove([`campgrounds/${filePath}`]);
+      .remove(filePaths);
+
+    if (storageError) {
+      console.error("Error deleting images:", storageError);
+      // Continue with campground deletion even if image deletion fails
+    }
   }
 
   // ✅ Delete the campground

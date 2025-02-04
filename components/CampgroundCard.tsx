@@ -28,7 +28,7 @@ export function CampgroundCard({
     <Card className="overflow-hidden">
       <div className="relative aspect-[16/9]">
         <Image
-          src={imageUrl || "/placeholder.svg"}
+          src={imageUrl?.[0] || "/placeholder.svg"}
           alt={`View of ${title}`}
           fill
           className="object-cover"

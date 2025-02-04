@@ -13,7 +13,14 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import EditCampgroundForm from "@/components/EditCampgroundForm";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import EditCampgroundForm from "@/components/UpdateCampgroundForm";
 import { useToast } from "@/hooks/use-toast";
 
 // server actions + supabase
@@ -23,7 +30,7 @@ import { updateCampground } from "@/app/actions/updateCampground";
 import { Database } from "@/types/supabase";
 
 // Form validation
-import type { FormValues } from "@/components/EditCampgroundForm";
+import type { FormValues } from "@/components/UpdateCampgroundForm";
 
 type Campground = Database["public"]["Tables"]["campgrounds"]["Row"];
 
@@ -49,7 +56,6 @@ const Page = () => {
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string;
-  console.log("Id:", id);
 
   useEffect(() => {
     async function fetchCampgrounds() {
@@ -93,7 +99,6 @@ const Page = () => {
   }
 
   async function handleUpdate(values: FormValues) {
-    console.log("Submitting update for:", values);
     const result = await updateCampground(id, values);
 
     if (result?.error) {
@@ -128,12 +133,23 @@ const Page = () => {
           <div className="h-full w-1/2 flex flex-col">
             <Card className="shadow-lg">
               <CardHeader>
-                <Image
-                  src={campground.imageUrl ?? "/placeholder.svg"}
-                  alt={campground.title ?? "Campground Image"}
-                  width={400}
-                  height={300}
-                />
+                <Carousel className="w-full;">
+                  <CarouselContent>
+                    {campground?.imageUrl?.map((img, index) => (
+                      <CarouselItem key={index} className="w-full">
+                        <Image
+                          src={img} // Display image from array
+                          alt={`Campground image ${index + 1}`}
+                          width={500}
+                          height={300}
+                          className="w-full h-[300px] object-cover rounded-lg"
+                        />
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious />
+                  <CarouselNext />
+                </Carousel>
               </CardHeader>
               <CardContent>
                 <p>{campground.title}</p>

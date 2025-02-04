@@ -22,27 +22,30 @@ export async function createCampground(values: {
     return { error: "You must be logged in to create a campground." };
   }
 
-  let imageUrl = null;
+  const imageUrls: string[] = [];
 
   //   upload the image to the campground-images bucket
   if (values.picture && values.picture.length > 0) {
-    const file = values.picture[0];
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-    const filePath = `campgrounds/${fileName}`;
+    for (const file of values.picture) {
+      const fileName = `${user.id}-${Date.now()}-${file.name}`;
+      const filePath = `campgrounds/${fileName}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from("campground-images")
-      .upload(filePath, file);
+      const { error: uploadError } = await supabase.storage
+        .from("campground-images")
+        .upload(filePath, file);
 
-    if (uploadError) {
-      return { error: `Image upload failed: ${uploadError.message}` };
+      if (uploadError) {
+        return { error: `Image upload failed: ${uploadError.message}` };
+      }
+
+      const { data } = supabase.storage
+        .from("campground-images")
+        .getPublicUrl(filePath);
+
+      if (data?.publicUrl) {
+        imageUrls.push(data.publicUrl); // Store the image URL in an array
+      }
     }
-
-    const { data } = supabase.storage
-      .from("campground-images")
-      .getPublicUrl(filePath);
-    imageUrl = data.publicUrl;
   }
 
   // ✅ Insert the campground into the database
@@ -54,7 +57,7 @@ export async function createCampground(values: {
       location: values.location,
       description: values.description,
       user_id: user.id, // Associate campground with logged-in user
-      imageUrl: imageUrl,
+      imageUrl: imageUrls,
     },
   ]);
 

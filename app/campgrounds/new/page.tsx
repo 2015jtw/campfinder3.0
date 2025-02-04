@@ -172,11 +172,12 @@ const Page = () => {
             name="picture"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Picture</FormLabel>
+                <FormLabel>Picture(s)</FormLabel>
                 <FormControl>
                   <Input
                     type="file"
                     accept="image/jpeg,image/jpg,image/png,image/webp"
+                    multiple
                     onChange={(e) => {
                       field.onChange(e.target.files);
                       if (e.target.files?.[0]) {

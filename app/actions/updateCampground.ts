@@ -10,6 +10,8 @@ export async function updateCampground(
     description?: string;
     price?: number;
     location?: string;
+    newImages?: FileList; // New images to upload
+    deleteImages?: string[]; // Images to delete from storage
   }
 ) {
   const supabase = await createClient();
@@ -34,7 +36,9 @@ export async function updateCampground(
   // ✅ Get the campground to check ownership
   const { data: campground, error: fetchError } = await supabase
     .from("campgrounds")
-    .select("id, user_id, title, author, price, location, description")
+    .select(
+      "id, user_id, title, author, price, location, description, imageUrl"
+    )
     .eq("id", id)
     .single();
 
@@ -51,6 +55,59 @@ export async function updateCampground(
     return { error: "You do not have permission to update this campground." };
   }
 
+  // ✅ Update images
+  let updatedImageUrls = campground.imageUrl || [];
+
+  if (values.deleteImages && values.deleteImages.length > 0) {
+    console.log("Deleting images:", values.deleteImages);
+
+    // Remove from storage
+    const { error: deleteError } = await supabase.storage
+      .from("campground-images")
+      .remove(
+        values.deleteImages.map(
+          (imgUrl) => `campgrounds/${imgUrl.split("/").pop()}`
+        )
+      );
+
+    if (deleteError) {
+      console.error("Error deleting images:", deleteError);
+      return { error: "Failed to delete images." };
+    }
+
+    // Remove from database array
+    updatedImageUrls = updatedImageUrls.filter(
+      (url: string) => !values.deleteImages?.includes(url)
+    );
+  }
+
+  // ✅ Upload new images
+  if (values.newImages && values.newImages.length > 0) {
+    console.log("Uploading new images...");
+    for (const file of values.newImages) {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `campgrounds/${fileName}`;
+
+      // Upload image
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("campground-images")
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error("Image upload failed:", uploadError);
+        return { error: "Failed to upload new images." };
+      }
+
+      // Get new image URL and add it to array
+      const publicUrl = supabase.storage
+        .from("campground-images")
+        .getPublicUrl(filePath).data.publicUrl;
+      updatedImageUrls.push(publicUrl);
+    }
+  }
+
   // ✅ Update the campground (excluding image update)
   const { error: updateError } = await supabase
     .from("campgrounds")
@@ -60,6 +117,7 @@ export async function updateCampground(
       price: values.price ?? campground.price,
       location: values.location ?? campground.location,
       description: values.description ?? campground.description,
+      imageUrl: updatedImageUrls, // Store updated image array
     })
     .eq("id", id);
 

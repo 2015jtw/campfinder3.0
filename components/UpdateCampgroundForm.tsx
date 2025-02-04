@@ -2,6 +2,7 @@
 
 // React/Next
 import React, { useState } from "react";
+import Image from "next/image";
 
 // UI
 import { Button } from "@/components/ui/button";
@@ -34,7 +35,11 @@ export const formSchema = z.object({
   description: z.string().min(2).max(500),
 });
 
-export type FormValues = z.infer<typeof formSchema>;
+export type FormValues = z.infer<typeof formSchema> & {
+  newImages?: FileList;
+  deleteImages?: string[];
+};
+
 type Campground = Database["public"]["Tables"]["campgrounds"]["Row"];
 
 interface EditCampgroundFormProps {
@@ -43,12 +48,17 @@ interface EditCampgroundFormProps {
   onCancel: () => void;
 }
 
-const EditCampgroundForm = ({
+const UpdateCampgroundForm = ({
   campground,
   onSubmit,
   onCancel,
 }: EditCampgroundFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentImages, setCurrentImages] = useState<string[]>(
+    campground.imageUrl || []
+  );
+  const [newImages, setNewImages] = useState<FileList | null>(null);
+  const [deleteImages, setDeleteImages] = useState<string[]>([]);
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -58,14 +68,28 @@ const EditCampgroundForm = ({
       price: campground.price || 0,
       location: campground.location || "",
       description: campground.description || "",
-      //   picture: undefined,
     },
   });
 
   async function handleSubmit(values: FormValues) {
     setIsSubmitting(true);
-    await onSubmit(values);
+    await onSubmit({
+      ...values,
+      newImages: newImages ?? undefined,
+      deleteImages,
+    });
     setIsSubmitting(false);
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (e.target.files) {
+      setNewImages(e.target.files);
+    }
+  }
+
+  function handleRemoveImage(imageUrl: string) {
+    setDeleteImages([...deleteImages, imageUrl]);
+    setCurrentImages(currentImages.filter((img) => img !== imageUrl));
   }
 
   return (
@@ -127,22 +151,40 @@ const EditCampgroundForm = ({
           )}
         />
 
-        {/* <FormField
-          control={form.control}
-          name="picture"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Picture</FormLabel>
-              <FormControl>
-                <Input
-                  type="file"
-                  onChange={(e) => field.onChange(e.target.files)}
+        <div>
+          <FormLabel>Upload New Images</FormLabel>
+          <Input
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={handleFileChange}
+          />
+        </div>
+
+        {/* Image Preview & Upload Section */}
+        <div>
+          <FormLabel>Current Images</FormLabel>
+          <div className="grid grid-cols-3 gap-4">
+            {currentImages.map((image, index) => (
+              <div key={index} className="relative">
+                <Image
+                  src={image}
+                  alt={`Campground image ${index}`}
+                  width={100}
+                  height={100}
+                  className="rounded-md"
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        /> */}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveImage(image)}
+                  className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full text-xs"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
 
         <FormField
           control={form.control}
@@ -169,4 +211,4 @@ const EditCampgroundForm = ({
   );
 };
 
-export default EditCampgroundForm;
+export default UpdateCampgroundForm;
