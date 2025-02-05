@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/carousel";
 import EditCampgroundForm from "@/components/UpdateCampgroundForm";
 import { useToast } from "@/hooks/use-toast";
+import ReviewForm from "@/components/ReviewsForm";
 
 // server actions + supabase
 import { createClient } from "@/lib/supabase/client";
@@ -33,6 +34,7 @@ import { Database } from "@/types/supabase";
 import type { FormValues } from "@/components/UpdateCampgroundForm";
 
 type Campground = Database["public"]["Tables"]["campgrounds"]["Row"];
+type Review = Database["public"]["Tables"]["reviews"]["Row"];
 
 const Page = () => {
   const { toast } = useToast();
@@ -51,6 +53,8 @@ const Page = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+
+  const [reviews, setReviews] = useState<Review[]>([]);
 
   const supabase = createClient();
   const router = useRouter();
@@ -77,6 +81,45 @@ const Page = () => {
       setIsLoading(false);
     }
     fetchCampgrounds();
+  }, [id]);
+
+  useEffect(() => {
+    async function fetchReviews() {
+      const { data, error } = await supabase
+        .from("reviews")
+        .select("*")
+        .eq("campground_id", id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Error fetching reviews.",
+        });
+      } else {
+        setReviews(data);
+      }
+    }
+    fetchReviews();
+
+    const subscription = supabase
+      .channel("reviews-channel")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "reviews" },
+        (payload) => {
+          console.log("New review added:", payload);
+
+          // ✅ Cast payload.new as a Review object
+          setReviews((prev) => [payload.new as Review, ...prev]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
   }, [id]);
 
   async function handleDelete() {
@@ -119,6 +162,7 @@ const Page = () => {
 
   if (isLoading) return <p>Loading...</p>;
   if (!campground) return <p>Campground not found.</p>;
+  if (!reviews) return <p>No reviews found.</p>;
 
   return (
     <section className="w-full h-screen py-20 bg-gray-100">
@@ -176,8 +220,22 @@ const Page = () => {
           <div className="h-1/2 justify-center items-center flex border border-green-700 w-full">
             Map
           </div>
-          <div className="h-1/2 justify-center items-center flex border border-blue-700 w-full">
-            Reviews
+          <div className="flex flex-col">
+            <div className="px-4">
+              <h3 className="text-lg font-bold mb-2">Reviews</h3>
+              {reviews.length > 0 ? (
+                reviews.map((review, index) => (
+                  <div key={index} className="mb-4 p-2 border rounded-md">
+                    <p className="text-sm font-bold">{review.name}</p>
+                    <p className="text-sm">⭐ {review.rating}/5</p>
+                    <p className="text-sm">{review.review}</p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">No reviews yet.</p>
+              )}
+              <ReviewForm campgroundId={id} />
+            </div>
           </div>
         </div>
       </div>
