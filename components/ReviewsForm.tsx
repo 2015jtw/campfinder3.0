@@ -49,9 +49,10 @@ const ratings = [
 
 interface ReviewFormProps {
   campgroundId: string;
+  onCancel?: () => void;
 }
 
-const ReviewForm = ({ campgroundId }: ReviewFormProps) => {
+const ReviewForm = ({ campgroundId, onCancel }: ReviewFormProps) => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -88,7 +89,7 @@ const ReviewForm = ({ campgroundId }: ReviewFormProps) => {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="name"
@@ -122,7 +123,7 @@ const ReviewForm = ({ campgroundId }: ReviewFormProps) => {
           name="rating"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Rating (1-5)</FormLabel>
+              <FormLabel>Rating</FormLabel>
               <Select
                 onValueChange={(value) => field.onChange(Number(value))}
                 defaultValue={String(field.value)}
@@ -145,9 +146,14 @@ const ReviewForm = ({ campgroundId }: ReviewFormProps) => {
           )}
         />
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? "Submitting..." : "Submit Review"}
-        </Button>
+        <div className="flex gap-4 ">
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Submitting..." : "Submit Review"}
+          </Button>
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+        </div>
       </form>
     </Form>
   );

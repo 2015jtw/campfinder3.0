@@ -8,7 +8,7 @@ export async function updateCampground(
     title?: string;
     author?: string;
     description?: string;
-    price?: number;
+    price?: string;
     location?: string;
     newImages?: FileList; // New images to upload
     deleteImages?: string[]; // Images to delete from storage
@@ -127,5 +127,8 @@ export async function updateCampground(
   }
 
   console.log("Campground updated successfully!");
-  return { success: true };
+  return {
+    success: true,
+    updatedImages: updatedImageUrls, // Return the new image URLs
+  };
 }

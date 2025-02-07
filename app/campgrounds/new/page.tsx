@@ -29,10 +29,7 @@ import { createCampground } from "@/app/actions/createCampground";
 const formSchema = z.object({
   title: z.string().min(2).max(50),
   author: z.string().min(2).max(50),
-  price: z
-    .string()
-    .min(1)
-    .transform((val) => parseFloat(val)), // Change to string
+  price: z.string().min(1), // Change to string
   location: z.string().min(2).max(50),
   picture: z
     .custom<FileList>()
@@ -68,7 +65,7 @@ const Page = () => {
       title: "",
       author: "",
       description: "",
-      price: 0,
+      price: "",
       location: "",
       picture: undefined,
     },
@@ -141,12 +138,7 @@ const Page = () => {
               <FormItem>
                 <FormLabel>Price per night</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="15"
-                    type="number"
-                    step="0.01"
-                    {...field}
-                  />
+                  <Input placeholder="15" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

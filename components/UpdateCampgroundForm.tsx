@@ -3,6 +3,7 @@
 // React/Next
 import React, { useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 // UI
 import { Button } from "@/components/ui/button";
@@ -26,12 +27,8 @@ import { Database } from "@/types/supabase";
 export const formSchema = z.object({
   title: z.string().min(2).max(50),
   author: z.string().min(2).max(50),
-  price: z
-    .string()
-    .min(1)
-    .transform((val) => parseFloat(val)),
+  price: z.string().min(1),
   location: z.string().min(2).max(50),
-  //   picture: z.custom<FileList>().optional(),
   description: z.string().min(2).max(500),
 });
 
@@ -44,7 +41,11 @@ type Campground = Database["public"]["Tables"]["campgrounds"]["Row"];
 
 interface EditCampgroundFormProps {
   campground: Campground;
-  onSubmit: (values: FormValues) => Promise<void>;
+  onSubmit: (values: FormValues) => Promise<{
+    success?: boolean;
+    error?: string;
+    updatedImages?: string[];
+  }>;
   onCancel: () => void;
 }
 
@@ -53,6 +54,7 @@ const UpdateCampgroundForm = ({
   onSubmit,
   onCancel,
 }: EditCampgroundFormProps) => {
+  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentImages, setCurrentImages] = useState<string[]>(
     campground.imageUrl || []
@@ -65,7 +67,7 @@ const UpdateCampgroundForm = ({
     defaultValues: {
       title: campground.title || "",
       author: campground.author || "",
-      price: campground.price || 0,
+      price: campground.price || "",
       location: campground.location || "",
       description: campground.description || "",
     },
@@ -73,11 +75,17 @@ const UpdateCampgroundForm = ({
 
   async function handleSubmit(values: FormValues) {
     setIsSubmitting(true);
-    await onSubmit({
+    const result = await onSubmit({
       ...values,
       newImages: newImages ?? undefined,
       deleteImages,
     });
+    if ("success" in result && result.success) {
+      if (result.updatedImages) {
+        setCurrentImages(result.updatedImages);
+      }
+      router.refresh();
+    }
     setIsSubmitting(false);
   }
 
@@ -130,7 +138,7 @@ const UpdateCampgroundForm = ({
             <FormItem>
               <FormLabel>Price</FormLabel>
               <FormControl>
-                <Input placeholder="15" type="number" step="0.01" {...field} />
+                <Input placeholder="15" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -166,12 +174,11 @@ const UpdateCampgroundForm = ({
           <FormLabel>Current Images</FormLabel>
           <div className="grid grid-cols-3 gap-4">
             {currentImages.map((image, index) => (
-              <div key={index} className="relative">
+              <div key={index} className="relative aspect-square w-full">
                 <Image
                   src={image}
                   alt={`Campground image ${index}`}
-                  width={100}
-                  height={100}
+                  fill
                   className="rounded-md"
                 />
                 <button
@@ -199,13 +206,14 @@ const UpdateCampgroundForm = ({
             </FormItem>
           )}
         />
-
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Updating..." : "Update Campground"}
-        </Button>
-        <Button variant="destructive" onClick={onCancel}>
-          Cancel
-        </Button>
+        <div className="flex gap-2">
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Updating..." : "Update Campground"}
+          </Button>
+          <Button variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+        </div>
       </form>
     </Form>
   );

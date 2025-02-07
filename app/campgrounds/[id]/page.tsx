@@ -23,6 +23,8 @@ import {
 import EditCampgroundForm from "@/components/UpdateCampgroundForm";
 import { useToast } from "@/hooks/use-toast";
 import ReviewForm from "@/components/ReviewsForm";
+import { StarRating } from "@/components/StarRating";
+import { User, MapPin, Bed } from "lucide-react";
 
 // server actions + supabase
 import { createClient } from "@/lib/supabase/client";
@@ -53,6 +55,7 @@ const Page = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [showReviewForm, setShowReviewForm] = useState(false);
 
   const [reviews, setReviews] = useState<Review[]>([]);
 
@@ -150,14 +153,40 @@ const Page = () => {
         title: "Error",
         description: result.error,
       });
-    } else {
-      toast({
-        title: "Success",
-        description: "Campground updated successfully!",
-      });
-      setIsEditing(false); // Exit edit mode
-      setCampground({ ...campground, ...values }); // Update UI
+      return { error: result.error };
     }
+
+    // Update local state
+    setCampground((prev) => ({
+      ...prev,
+      ...values,
+      imageUrl: result?.updatedImages || prev.imageUrl,
+    }));
+
+    // Force revalidation
+    router.refresh();
+
+    // Refetch campground data
+    const { data } = await supabase
+      .from("campgrounds")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (data) {
+      setCampground(data);
+    }
+
+    setIsEditing(false);
+    toast({
+      title: "Success",
+      description: "Campground updated successfully!",
+    });
+
+    return {
+      success: true,
+      updatedImages: result?.updatedImages || campground.imageUrl,
+    };
   }
 
   if (isLoading) return <p>Loading...</p>;
@@ -165,8 +194,8 @@ const Page = () => {
   if (!reviews) return <p>No reviews found.</p>;
 
   return (
-    <section className="w-full h-screen py-20 bg-gray-100">
-      <div className="container px-4 mx-auto bg-white flex justify-between py-10">
+    <section className="w-full py-12">
+      <div className="container mx-auto px-4 bg-white flex flex-col md:flex-row justify-between py-10 gap-4">
         {isEditing ? (
           <EditCampgroundForm
             campground={campground}
@@ -174,7 +203,7 @@ const Page = () => {
             onCancel={() => setIsEditing(false)}
           />
         ) : (
-          <div className="h-full w-1/2 flex flex-col">
+          <div className="h-full md:w-2/3 flex flex-col">
             <Card className="shadow-lg">
               <CardHeader>
                 <Carousel className="w-full;">
@@ -182,6 +211,7 @@ const Page = () => {
                     {campground?.imageUrl?.map((img, index) => (
                       <CarouselItem key={index} className="w-full">
                         <Image
+                          key={`${img}?${Date.now()}`} // Add cache-busting key
                           src={img} // Display image from array
                           alt={`Campground image ${index + 1}`}
                           width={500}
@@ -195,20 +225,59 @@ const Page = () => {
                   <CarouselNext />
                 </Carousel>
               </CardHeader>
-              <CardContent>
-                <p>{campground.title}</p>
-                <p>{campground.author}</p>
-                <p>{campground.description}</p>
-                <p>{campground.location}</p>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4">
+                  <div>
+                    <h2 className="text-2xl font-bold">{campground.title}</h2>
+                  </div>
+
+                  <div className="flex justify-start gap-x-8">
+                    <div className="flex items-center gap-2">
+                      <Bed className="h-5 w-5 text-gray-600" />
+                      <div>
+                        <p className="text-gray-800">
+                          ${campground.price}{" "}
+                          <span className="">per night</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <User className="h-5 w-5 text-gray-600" />
+                      <div>
+                        <p className="text-gray-800">{campground.author}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-5 w-5 text-gray-600" />
+                      <div>
+                        <p className="text-gray-800">{campground.location}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="font-semibold text-gray-700">
+                      Description:
+                    </span>
+                    <p className="text-gray-600">{campground.description}</p>
+                  </div>
+                </div>
               </CardContent>
               <CardFooter className="flex gap-4">
-                <Button variant="edit" onClick={() => setIsEditing(true)}>
+                <Button
+                  variant="edit"
+                  onClick={() => setIsEditing(true)}
+                  className="w-20"
+                >
                   Edit
                 </Button>
                 <Button
                   variant="destructive"
                   onClick={handleDelete}
                   disabled={isDeleting}
+                  className="w-20"
                 >
                   {isDeleting ? "Deleting..." : "Delete"}
                 </Button>
@@ -216,25 +285,39 @@ const Page = () => {
             </Card>
           </div>
         )}
-        <div className="flex flex-col justify-center w-1/2">
-          <div className="h-1/2 justify-center items-center flex border border-green-700 w-full">
-            Map
-          </div>
+        <div className="flex flex-col w-full md:w-1/3">
           <div className="flex flex-col">
             <div className="px-4">
               <h3 className="text-lg font-bold mb-2">Reviews</h3>
               {reviews.length > 0 ? (
                 reviews.map((review, index) => (
                   <div key={index} className="mb-4 p-2 border rounded-md">
-                    <p className="text-sm font-bold">{review.name}</p>
-                    <p className="text-sm">⭐ {review.rating}/5</p>
-                    <p className="text-sm">{review.review}</p>
+                    <div className="gap-2 flex flex-col">
+                      <p className="text-sm font-bold">{review.name}</p>
+                      <div className="flex items-center gap-1">
+                        <StarRating rating={review.rating ?? 0} />
+                        <span className="text-sm text-gray-500">
+                          ({review.rating}/5)
+                        </span>
+                      </div>
+                      <p className="text-sm">{review.review}</p>
+                    </div>
                   </div>
                 ))
               ) : (
                 <p className="text-sm text-gray-500">No reviews yet.</p>
               )}
-              <ReviewForm campgroundId={id} />
+              {!showReviewForm && (
+                <Button onClick={() => setShowReviewForm(true)}>
+                  Add Review
+                </Button>
+              )}
+              {showReviewForm && (
+                <ReviewForm
+                  campgroundId={id}
+                  onCancel={() => setShowReviewForm(false)}
+                />
+              )}{" "}
             </div>
           </div>
         </div>

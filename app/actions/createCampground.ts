@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function createCampground(values: {
   title: string;
   author: string;
-  price: number;
+  price: string;
   location: string;
   picture?: FileList;
   description: string;
