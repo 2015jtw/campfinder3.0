@@ -4,8 +4,6 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
 
 // UI
 import {
@@ -21,11 +19,10 @@ const baseLinks = [
   { name: "Home", href: "/" },
   { name: "Campgrounds", href: "/campgrounds" },
   { name: "New Campground", href: "/campgrounds/new" },
+  { name: "Contact Us", href: "/contact" },
 ];
 
 const MobileHeader = () => {
-  const pathname = usePathname();
-
   return (
     <header className="flex h-16 md:hidden">
       <nav className="flex items-center justify-between container mx-auto px-5">
@@ -33,13 +30,15 @@ const MobileHeader = () => {
 
         <Sheet>
           <SheetTrigger>
-            <Image
-              src="/icons/hamburger.svg"
-              width={30}
-              height={30}
-              alt="Menu"
-              className="cursor-pointer"
-            />
+            <Link href="/">
+              <Image
+                src="/icons/hamburger.svg"
+                width={30}
+                height={30}
+                alt="Menu"
+                className="cursor-pointer"
+              />
+            </Link>
           </SheetTrigger>
           <SheetContent side="right">
             <DialogTitle className="hidden">Navigation Menu</DialogTitle>
@@ -56,19 +55,14 @@ const MobileHeader = () => {
               <SheetClose asChild key={link.name}>
                 <Link
                   href={link.href}
-                  className={cn(
-                    "flex items-center gap-4 text-white-1 text-18 font-medium py-4 pl-4",
-                    {
-                      "text-blue-600": pathname === link.href,
-                    }
-                  )}
+                  className="flex items-center gap-4 text-white-1 text-18 font-medium py-4 pl-4 hover:text-primary"
                 >
                   {link.name}
                 </Link>
               </SheetClose>
             ))}
             <SheetClose asChild>
-              <LoginButton className="my-4 ml-4" />
+              <LoginButton className="ml-4 my-4" />
             </SheetClose>
           </SheetContent>
         </Sheet>

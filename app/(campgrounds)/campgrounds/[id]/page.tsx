@@ -308,7 +308,11 @@ const Page = () => {
                 <p className="text-sm text-gray-500">No reviews yet.</p>
               )}
               {!showReviewForm && (
-                <Button onClick={() => setShowReviewForm(true)}>
+                <Button
+                  className="mt-3"
+                  variant={"outline"}
+                  onClick={() => setShowReviewForm(true)}
+                >
                   Add Review
                 </Button>
               )}

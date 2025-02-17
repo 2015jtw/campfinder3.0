@@ -35,10 +35,10 @@ const LoginButton = ({ className }: { className?: string }) => {
   }
   return (
     <Button
-      variant="outline"
       onClick={() => {
         router.push("/login");
       }}
+      className={cn(className)}
     >
       Login
     </Button>

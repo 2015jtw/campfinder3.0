@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
 
-import "./globals.css";
+import "../globals.css";
+import Header from "@/components/Header";
+import MobileHeader from "@/components/MobileHeader";
 import { Toaster } from "@/components/ui/toaster";
+import Footer from "@/components/Footer";
 
 const roboto = Roboto({
   variable: "--font-roboto",
@@ -22,11 +25,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${roboto.variable} antialiased`}>
-        {children}
-        <Toaster />
-      </body>
-    </html>
+    <div className={`${roboto.variable} antialiased`}>
+      <Header />
+      <MobileHeader />
+      <main>{children}</main>
+      <Toaster />
+      <Footer />
+    </div>
   );
 }

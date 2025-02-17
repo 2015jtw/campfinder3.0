@@ -4,50 +4,50 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
 
-// UI + utils
-import { cn } from "@/lib/utils";
+// UI
 import LoginButton from "./LoginLogoutButton";
 
 const Header = () => {
-  const pathname = usePathname();
-
   return (
-    <header className="p-4 border-b border-black shadow-md hidden md:flex">
-      <nav className="container mx-auto flex items-center justify-between">
-        <div className="flex items-center">
-          <Image src="/icons/logo.svg" width={30} height={30} alt="menu item" />
+    <header className="hidden md:block p-4">
+      <nav className="container mx-auto flex items-center justify-between rounded-lg shadow-lg px-6 py-3">
+        <div className="flex flex-none w-1/6 items-center">
+          <Link href="/">
+            <Image
+              src="/icons/logo.svg"
+              width={30}
+              height={30}
+              alt="menu item"
+            />
+          </Link>
         </div>
-        <div className="flex-1 flex justify-center">
-          <div className="gap-4 flex items-center">
-            <Link
-              href="/"
-              className={cn("text-lg font-medium", {
-                "text-blue-600": pathname === "/",
-              })}
-            >
+        <div className="flex-1 w-4/6">
+          <div className="flex justify-center items-center w-full gap-12">
+            <Link href="/" className="text-xl font-normal hover:text-primary">
               Home
             </Link>
             <Link
-              className={cn("text-lg font-medium", {
-                "text-blue-600": pathname === "/campgrounds",
-              })}
+              className="text-xl font-normal hover:text-primary"
               href="/campgrounds"
             >
               Campgrounds
             </Link>
             <Link
-              className={cn("text-lg font-medium", {
-                "text-blue-600": pathname === "/campgrounds/new",
-              })}
+              className="text-xl font-normal hover:text-primary"
               href="/campgrounds/new"
             >
-              New Campground
+              Create Campground
+            </Link>
+            <Link
+              className="text-xl font-normal hover:text-primary"
+              href="/contact"
+            >
+              Contact Us
             </Link>
           </div>
         </div>
-        <div>
+        <div className="flex w-1/6 justify-end flex-none">
           <LoginButton />
         </div>
       </nav>
