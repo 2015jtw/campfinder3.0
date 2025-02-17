@@ -1,4 +1,5 @@
 import { CampgroundCard } from "@/components/CampgroundCard";
+import Searchbar from "@/components/Searchbar";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function Page() {
@@ -8,6 +9,7 @@ export default async function Page() {
 
   return (
     <section className="py-12 bg-white w-full">
+      <Searchbar onSearch="test" className="py-12" />
       <div className="container mx-auto px-4">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {data &&
