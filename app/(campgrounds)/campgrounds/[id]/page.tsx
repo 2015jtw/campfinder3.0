@@ -65,7 +65,7 @@ const Page = () => {
   const id = params?.id as string;
 
   useEffect(() => {
-    async function fetchCampgrounds() {
+    async function fetchCampground() {
       const { data, error } = await supabase
         .from("campgrounds")
         .select("*")
@@ -83,7 +83,7 @@ const Page = () => {
       }
       setIsLoading(false);
     }
-    fetchCampgrounds();
+    fetchCampground();
   }, [id]);
 
   useEffect(() => {
