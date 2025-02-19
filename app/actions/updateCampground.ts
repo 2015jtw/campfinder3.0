@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { geocodeAddress } from "@/lib/Geocode";
 
 export async function updateCampground(
   id: string,
@@ -53,6 +54,21 @@ export async function updateCampground(
   if (campground.user_id !== user.id) {
     console.error("Unauthorized update attempt by user:", user.id);
     return { error: "You do not have permission to update this campground." };
+  }
+
+  // ✅ Convert new location (if provided) into coordinates; if not provided, keep current coordinates
+  let coordinates = { latitude: 0, longitude: 0 };
+  if (values.location) {
+    const coords = await geocodeAddress(values.location);
+    if (!coords) {
+      return {
+        error: "Could not determine coordinates for the provided location.",
+      };
+    }
+    coordinates = coords;
+  } else {
+    // Optionally, you could keep the existing coordinates (if stored)
+    // For now, we'll leave them as is if no new location is provided.
   }
 
   // ✅ Update images
@@ -108,17 +124,27 @@ export async function updateCampground(
     }
   }
 
-  // ✅ Update the campground (excluding image update)
+  // ✅ Update the campground record, including coordinates if a new location was provided
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updatePayload: any = {
+    title: values.title ?? campground.title,
+    author: values.author ?? campground.author,
+    price: values.price ?? campground.price,
+    location: values.location ?? campground.location,
+    description: values.description ?? campground.description,
+    imageUrl: updatedImageUrls,
+    updated_at: new Date().toISOString(),
+  };
+
+  // If new coordinates were obtained, add them to the update payload
+  if (values.location) {
+    updatePayload.latitude = coordinates.latitude;
+    updatePayload.longitude = coordinates.longitude;
+  }
+
   const { error: updateError } = await supabase
     .from("campgrounds")
-    .update({
-      title: values.title ?? campground.title,
-      author: values.author ?? campground.author,
-      price: values.price ?? campground.price,
-      location: values.location ?? campground.location,
-      description: values.description ?? campground.description,
-      imageUrl: updatedImageUrls, // Store updated image array
-    })
+    .update(updatePayload)
     .eq("id", id);
 
   if (updateError) {
@@ -127,8 +153,29 @@ export async function updateCampground(
   }
 
   console.log("Campground updated successfully!");
-  return {
-    success: true,
-    updatedImages: updatedImageUrls, // Return the new image URLs
-  };
+  return { success: true, updatedImages: updatedImageUrls };
+
+  // ✅ Update the campground (excluding image update)
+  // const { error: updateError } = await supabase
+  //   .from("campgrounds")
+  //   .update({
+  //     title: values.title ?? campground.title,
+  //     author: values.author ?? campground.author,
+  //     price: values.price ?? campground.price,
+  //     location: values.location ?? campground.location,
+  //     description: values.description ?? campground.description,
+  //     imageUrl: updatedImageUrls, // Store updated image array
+  //   })
+  //   .eq("id", id);
+
+  // if (updateError) {
+  //   console.error("Update error:", updateError);
+  //   return { error: `Failed to update campground: ${updateError.message}` };
+  // }
+
+  // console.log("Campground updated successfully!");
+  // return {
+  //   success: true,
+  //   updatedImages: updatedImageUrls, // Return the new image URLs
+  // };
 }

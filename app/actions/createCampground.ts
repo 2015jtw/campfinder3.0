@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { geocodeAddress } from "@/lib/Geocode";
 
 export async function createCampground(values: {
   title: string;
@@ -20,6 +21,13 @@ export async function createCampground(values: {
 
   if (!user || userError) {
     return { error: "You must be logged in to create a campground." };
+  }
+
+  const coordinates = await geocodeAddress(values.location);
+  if (!coordinates) {
+    return {
+      error: "Could not determine coordinates for the provided location.",
+    };
   }
 
   const imageUrls: string[] = [];
@@ -58,6 +66,8 @@ export async function createCampground(values: {
       description: values.description,
       user_id: user.id, // Associate campground with logged-in user
       imageUrl: imageUrls,
+      latitude: coordinates.latitude,
+      longitude: coordinates.longitude,
     },
   ]);
 
