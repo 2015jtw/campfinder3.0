@@ -5,7 +5,7 @@ import { CampgroundCard } from "@/components/CampgroundCard";
 import Searchbar from "@/components/Searchbar";
 import { createClient } from "@/lib/supabase/client";
 import { Database } from "@/types/supabase";
-import MapBoxMap from "@/components/Mapbox";
+// import MapBoxMap from "@/components/Mapbox";
 
 type Campground = Database["public"]["Tables"]["campgrounds"]["Row"];
 
@@ -57,9 +57,9 @@ export default function Page() {
   return (
     <section className="py-12 bg-white w-full">
       <Searchbar onSearch={handleSearch} className="py-12" />
-      <div className="mb-12 h-96">
+      {/* <div className="mb-12 h-96">
         <MapBoxMap markers={markers} center={center} zoom={[4]} />
-      </div>
+      </div> */}
       <div className="container mx-auto px-4">
         {campgrounds.length === 0 ? (
           <p className="text-center text-gray-600">
